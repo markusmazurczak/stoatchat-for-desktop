@@ -5,11 +5,6 @@ let config: DesktopConfig = ipcRenderer.sendSync("config:get");
 
 ipcRenderer.on("config", (_, data) => (config = data));
 
-/** Current desktop config for other preload modules */
-export function getDesktopConfig() {
-  return config;
-}
-
 contextBridge.exposeInMainWorld("desktopConfig", {
   get: () => config,
   set: (config: DesktopConfig) => ipcRenderer.send("config", config),
