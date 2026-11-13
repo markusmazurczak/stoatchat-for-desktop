@@ -1,9 +1,8 @@
 import AutoLaunch from "auto-launch";
 
 import { handleTrusted } from "./security";
-import { getAppOrigin } from "./window";
-
 import { getAutoLaunchPath } from "./squirrel";
+import { getAppOrigin } from "./window";
 
 export const autoLaunch = new AutoLaunch({
   name: "Stoat",

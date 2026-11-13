@@ -29,6 +29,13 @@ const schema = {
   discordRpc: {
     type: "boolean",
   } as JSONSchema.Boolean,
+  serverUrl: {
+    type: "string",
+  } as JSONSchema.String,
+  recentServers: {
+    type: "array",
+    items: { type: "string" },
+  } as JSONSchema.Array,
   windowState: {
     type: "object",
     properties: {
@@ -51,7 +58,16 @@ const schema = {
   } as JSONSchema.Object,
 };
 
-const defaults: DesktopConfig = {
+/** Desktop-only settings that are never exposed to the web app */
+type LocalConfig = {
+  /** empty: use the official server */
+  serverUrl: string;
+  recentServers: string[];
+};
+
+const defaults: DesktopConfig & LocalConfig = {
+  serverUrl: "",
+  recentServers: [],
   firstLaunch: true,
   customFrame: true,
   minimiseToTray: true,
@@ -203,6 +219,30 @@ class Config {
     }
 
     this.sync();
+  }
+
+  get serverUrl() {
+    return (store as never as { get(k: string): string }).get("serverUrl");
+  }
+
+  set serverUrl(value: string) {
+    (store as never as { set(k: string, value: string): void }).set(
+      "serverUrl",
+      value,
+    );
+  }
+
+  get recentServers() {
+    return (store as never as { get(k: string): string[] }).get(
+      "recentServers",
+    );
+  }
+
+  set recentServers(value: string[]) {
+    (store as never as { set(k: string, value: string[]): void }).set(
+      "recentServers",
+      value,
+    );
   }
 
   get windowState() {

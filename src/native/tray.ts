@@ -4,6 +4,7 @@ import trayIconAsset from "../../assets/desktop/icon.png?asset";
 import macOsTrayIconAsset from "../../assets/desktop/iconTemplate.png?asset";
 import { version } from "../../package.json";
 
+import { openSettingsWindow } from "./settingsWindow";
 import { mainWindow, quitApp } from "./window";
 
 // internal tray state
@@ -67,6 +68,12 @@ export function updateTrayMenu() {
           }
         },
       },
+      {
+        label: "Desktop settings…",
+        type: "normal",
+        click: () => openSettingsWindow(),
+      },
+      { type: "separator" },
       {
         label: "Quit App",
         type: "normal",
