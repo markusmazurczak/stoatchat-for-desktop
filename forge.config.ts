@@ -172,6 +172,12 @@ const config: ForgeConfig = {
           config: "vite.preload.config.ts",
           target: "preload",
         },
+        {
+          // preload of the local desktop settings window
+          entry: "src/settingsPreload.ts",
+          config: "vite.preload.config.ts",
+          target: "preload",
+        },
       ],
       renderer: [],
     }),

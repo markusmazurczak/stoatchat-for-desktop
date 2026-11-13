@@ -21,6 +21,8 @@ import {
   isTrustedSender,
   onTrusted,
 } from "./security";
+import { type ResolvedServer, resolveServerUrl } from "./serverUrl";
+import { openSettingsWindow } from "./settingsWindow";
 import { updateTrayMenu } from "./tray";
 import { startVirtualMic } from "./virtualMic";
 
@@ -41,16 +43,53 @@ function scaleSourceIcon(icon?: Electron.NativeImage) {
 // global reference to main window
 export let mainWindow: BrowserWindow;
 
-// currently in-use build
-export const BUILD_URL = new URL(
-  app.commandLine.hasSwitch("force-server")
-    ? app.commandLine.getSwitchValue("force-server")
-    : /*MAIN_WINDOW_VITE_DEV_SERVER_URL ??*/ "https://stoat.chat/app",
-);
+// currently in-use server: --force-server > saved setting > official app
+let server: ResolvedServer | undefined;
+
+function currentServer() {
+  if (!server) {
+    server = resolveServerUrl(
+      app.commandLine.hasSwitch("force-server")
+        ? app.commandLine.getSwitchValue("force-server")
+        : undefined,
+      config.serverUrl,
+    );
+    if (server.warning) console.warn(server.warning);
+  }
+  return server;
+}
+
+/** URL of the web app currently loaded in the main window */
+export function getServerUrl() {
+  return currentServer().url;
+}
+
+/** Where the current server came from (command line, settings or default) */
+export function getServerSource() {
+  return currentServer().source;
+}
+
+/** Warning about an ignored invalid server setting, if any */
+export function getServerWarning() {
+  return currentServer().warning;
+}
 
 /** Origin of the loaded app; the only origin trusted with IPC and permissions */
 export function getAppOrigin() {
-  return BUILD_URL.origin;
+  return new URL(getServerUrl()).origin;
+}
+
+/**
+ * Load another server in the main window. The caller validates and persists
+ * the URL; logins stay separate per server because storage is per origin.
+ */
+export function switchServer(url: string) {
+  server = { url, source: "settings" };
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.loadURL(url).catch((err) => {
+      console.error("Failed to load server:", err);
+    });
+  }
 }
 
 // internal window state
@@ -121,7 +160,7 @@ export function createMainWindow() {
 
   // load the entrypoint
   mainWindow
-    .loadURL(BUILD_URL.toString())
+    .loadURL(getServerUrl())
     .then(() => mainWindow.webContents.reload());
 
   // minimise window to tray
@@ -178,6 +217,32 @@ export function createMainWindow() {
       mainWindow.webContents.reload();
     }
   });
+
+  // Ctrl/Cmd+Shift+, opens the desktop settings (e.g. to change the server)
+  mainWindow.webContents.on("before-input-event", (event, input) => {
+    const modifier = process.platform === "darwin" ? input.meta : input.control;
+    if (
+      input.type === "keyDown" &&
+      modifier &&
+      input.shift &&
+      input.code === "Comma"
+    ) {
+      event.preventDefault();
+      openSettingsWindow();
+    }
+  });
+
+  // if the server cannot be loaded, offer to change it instead of a blank window
+  mainWindow.webContents.on(
+    "did-fail-load",
+    (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+      // -3 (ERR_ABORTED) happens on regular navigations/reloads
+      if (!isMainFrame || errorCode === -3) return;
+      openSettingsWindow(
+        `Could not load ${validatedURL} (${errorDescription}). Check the server address or your connection.`,
+      );
+    },
+  );
 
   // send the config
   mainWindow.webContents.on("did-finish-load", () => config.sync());

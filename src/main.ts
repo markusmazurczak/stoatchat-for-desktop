@@ -13,13 +13,19 @@ import {
   registerProtocol,
 } from "./native/deepLink";
 import { initDiscordRpc } from "./native/discordRpc";
+import { openSettingsWindow } from "./native/settingsWindow";
 import {
   WINDOWS_APP_USER_MODEL_ID,
   handleSquirrelEvent,
 } from "./native/squirrel";
 import { initTray } from "./native/tray";
 import { destroyVirtualMic, initVirtualMic } from "./native/virtualMic";
-import { BUILD_URL, createMainWindow, mainWindow } from "./native/window";
+import {
+  createMainWindow,
+  getAppOrigin,
+  getServerWarning,
+  mainWindow,
+} from "./native/window";
 
 // In Flatpak, we have to update the temp dir to a shared directory across host and sandbox;
 // otherwise, the icon will not show up in the tray when using app indicators.
@@ -82,9 +88,9 @@ function canUseAutoUpdater() {
   }
 }
 
-function isSameOrigin(url: string, base: URL) {
+function isSameOrigin(url: string, origin: string) {
   try {
-    return new URL(url).origin === base.origin;
+    return new URL(url).origin === origin;
   } catch {
     return false;
   }
@@ -133,6 +139,10 @@ if (acquiredLock) {
     }
 
     initTray();
+
+    // an invalid saved server or --force-server value was ignored
+    const serverWarning = getServerWarning();
+    if (serverWarning) openSettingsWindow(serverWarning);
     initDiscordRpc();
     initVirtualMic();
     initAutoLaunch();
@@ -184,7 +194,7 @@ if (acquiredLock) {
     contents.on("will-attach-webview", (event) => event.preventDefault());
 
     contents.on("will-navigate", (event, navigationUrl) => {
-      if (new URL(navigationUrl).origin !== BUILD_URL.origin) {
+      if (!isSameOrigin(navigationUrl, getAppOrigin())) {
         event.preventDefault();
       }
     });
@@ -192,7 +202,7 @@ if (acquiredLock) {
     // handle links externally
     contents.setWindowOpenHandler(({ url }) => {
       // links to the app itself (e.g. middle-clicked message links) stay in the app
-      if (isSameOrigin(url, BUILD_URL)) {
+      if (isSameOrigin(url, getAppOrigin())) {
         setImmediate(() => mainWindow.loadURL(url));
         return { action: "deny" };
       }
