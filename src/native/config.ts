@@ -178,16 +178,22 @@ class Config {
   }
 
   set discordRpc(value: boolean) {
-    if (value) {
-      initDiscordRpc();
-    } else {
-      destroyDiscordRpc();
-    }
+    const changed = value !== this.discordRpc;
 
+    // persist first: initDiscordRpc() reads the stored value
     (store as never as { set(k: string, value: boolean): void }).set(
       "discordRpc",
       value,
     );
+
+    // the web app sends the whole config on every change; only react to real toggles
+    if (changed) {
+      if (value) {
+        initDiscordRpc();
+      } else {
+        destroyDiscordRpc();
+      }
+    }
 
     this.sync();
   }
