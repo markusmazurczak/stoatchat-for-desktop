@@ -59,8 +59,10 @@ const onNotifyUser = (_info: IUpdateInfo) => {
 };
 
 if (acquiredLock) {
-  // start auto update logic
-  updateElectronApp({ onNotifyUser });
+  // start auto update logic (never in fork test builds: they would be replaced by upstream releases)
+  if (!__STOAT_FORK_BUILD__) {
+    updateElectronApp({ onNotifyUser });
+  }
 
   // facilitate stoat:// links
   registerProtocol();
