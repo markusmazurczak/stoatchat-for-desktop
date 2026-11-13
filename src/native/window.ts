@@ -3,17 +3,19 @@ import { join } from "node:path";
 import {
   BrowserWindow,
   Menu,
-  MenuItem,
   app,
+  clipboard,
   desktopCapturer,
   ipcMain,
   nativeImage,
   session,
+  shell,
 } from "electron";
 
 import windowIconAsset from "../../assets/desktop/icon.png?asset";
 
 import { config } from "./config";
+import { buildContextMenuTemplate } from "./contextMenu";
 import { updateTrayMenu } from "./tray";
 import { startVirtualMic } from "./virtualMic";
 
@@ -152,46 +154,25 @@ export function createMainWindow() {
   // send the config
   mainWindow.webContents.on("did-finish-load", () => config.sync());
 
-  // configure spellchecker context menu
+  // context menu: spelling, edit actions, links and images
   mainWindow.webContents.on("context-menu", (_, params) => {
-    const menu = new Menu();
+    const contents = mainWindow.webContents;
+    const template = buildContextMenuTemplate(params, {
+      replaceMisspelling: (suggestion) =>
+        contents.replaceMisspelling(suggestion),
+      addToDictionary: (word) =>
+        contents.session.addWordToSpellCheckerDictionary(word),
+      toggleSpellcheck: () => {
+        config.spellchecker = !config.spellchecker;
+      },
+      copyText: (text) => clipboard.writeText(text),
+      openExternal: (url) => shell.openExternal(url),
+      copyImageAt: (x, y) => contents.copyImageAt(x, y),
+      downloadUrl: (url) => contents.downloadURL(url),
+    });
 
-    // add all suggestions
-    for (const suggestion of params.dictionarySuggestions) {
-      menu.append(
-        new MenuItem({
-          label: suggestion,
-          click: () => mainWindow.webContents.replaceMisspelling(suggestion),
-        }),
-      );
-    }
-
-    // allow users to add the misspelled word to the dictionary
-    if (params.misspelledWord) {
-      menu.append(
-        new MenuItem({
-          label: "Add to dictionary",
-          click: () =>
-            mainWindow.webContents.session.addWordToSpellCheckerDictionary(
-              params.misspelledWord,
-            ),
-        }),
-      );
-    }
-
-    // add an option to toggle spellchecker
-    menu.append(
-      new MenuItem({
-        label: "Toggle spellcheck",
-        click() {
-          config.spellchecker = !config.spellchecker;
-        },
-      }),
-    );
-
-    // show menu if we've generated enough entries
-    if (menu.items.length > 0) {
-      menu.popup();
+    if (template.length > 0) {
+      Menu.buildFromTemplate(template).popup();
     }
   });
 
