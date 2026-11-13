@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 
-let config: DesktopConfig;
+// Available before the page's scripts run; kept up to date by "config" pushes.
+let config: DesktopConfig = ipcRenderer.sendSync("config:get");
 
 ipcRenderer.on("config", (_, data) => (config = data));
 

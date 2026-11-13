@@ -74,8 +74,8 @@ const store = new Store({
  * Shim for `electron-store` because typings are broken
  */
 class Config {
-  sync() {
-    mainWindow.webContents.send("config", {
+  snapshot(): DesktopConfig {
+    return {
       firstLaunch: this.firstLaunch,
       customFrame: this.customFrame,
       minimiseToTray: this.minimiseToTray,
@@ -84,7 +84,11 @@ class Config {
       hardwareAcceleration: this.hardwareAcceleration,
       discordRpc: this.discordRpc,
       windowState: this.windowState,
-    });
+    };
+  }
+
+  sync() {
+    mainWindow.webContents.send("config", this.snapshot());
   }
 
   get firstLaunch() {
@@ -210,6 +214,13 @@ class Config {
 }
 
 export const config = new Config();
+
+// The preload reads the configuration synchronously before any page script runs.
+// Waiting for `did-finish-load` is too late: the web app may already render the
+// custom titlebar, which reads `desktopConfig.get().windowState` (blank window).
+ipcMain.on("config:get", (event) => {
+  event.returnValue = config.snapshot();
+});
 
 ipcMain.on("config", (_, newConfig: Partial<DesktopConfig>) => {
   console.info("Received new configuration", newConfig);
