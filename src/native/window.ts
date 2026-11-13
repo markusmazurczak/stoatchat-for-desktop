@@ -61,9 +61,12 @@ export function createMainWindow() {
       preload: join(__dirname, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
-      spellcheck: true,
+      spellcheck: config.spellchecker,
     },
   });
+
+  // apply the persisted spellchecker setting (previously only applied when toggled)
+  mainWindow.webContents.session.setSpellCheckerEnabled(config.spellchecker);
 
   // hide the options
   mainWindow.setMenu(null);
