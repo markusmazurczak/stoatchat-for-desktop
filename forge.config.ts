@@ -1,3 +1,4 @@
+import { MakerDMG } from "@electron-forge/maker-dmg";
 import { MakerFlatpak } from "@electron-forge/maker-flatpak";
 import { MakerFlatpakOptionsConfig } from "@electron-forge/maker-flatpak/dist/Config";
 import { MakerSquirrel } from "@electron-forge/maker-squirrel";
@@ -38,6 +39,11 @@ const makers: ForgeConfig["makers"] = [
     copyright: "Copyright (C) 2025 Revolt Platforms LTD",
   }),
   new MakerZIP({}),
+  // drag-and-drop installer for macOS (unsigned until signing is configured)
+  new MakerDMG({
+    name: STRINGS.name,
+    format: "ULFO",
+  }),
   new MakerFlatpak({
     options: {
       id: "chat.stoat.StoatDesktop",
