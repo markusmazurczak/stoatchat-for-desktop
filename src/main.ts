@@ -65,7 +65,8 @@ const onNotifyUser = (_info: IUpdateInfo) => {
  * exception dialog and the app failed to start. Probe first and skip updates.
  */
 function canUseAutoUpdater() {
-  if (process.platform !== "darwin") return true;
+  // update-electron-app is a no-op for unpackaged (dev) builds anyway
+  if (process.platform !== "darwin" || !app.isPackaged) return true;
 
   try {
     autoUpdater.setFeedURL({ url: "https://update.electronjs.org" });
@@ -78,13 +79,17 @@ function canUseAutoUpdater() {
 
 if (acquiredLock) {
   // start auto update logic (feed URL is replaced by update-electron-app)
+  // start auto update logic (feed URL is replaced by update-electron-app)
   // never in fork test builds: they would be replaced by upstream releases
   if (!__STOAT_FORK_BUILD__) {
-    app.whenReady().then(() => {
-      if (canUseAutoUpdater()) {
-        updateElectronApp({ onNotifyUser });
-      }
-    });
+    app
+      .whenReady()
+      .then(() => {
+        if (canUseAutoUpdater()) {
+          updateElectronApp({ onNotifyUser });
+        }
+      })
+      .catch((err) => console.error("Failed to start auto-updates:", err));
   }
 
   // facilitate stoat:// links
