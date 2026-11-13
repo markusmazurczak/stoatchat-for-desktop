@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { IUpdateInfo, updateElectronApp } from "update-electron-app";
 
-import { BrowserWindow, Notification, app, shell } from "electron";
+import { BrowserWindow, Notification, app, autoUpdater, shell } from "electron";
 import started from "electron-squirrel-startup";
 
 import { initAutoLaunch } from "./native/autoLaunch";
@@ -58,9 +58,31 @@ const onNotifyUser = (_info: IUpdateInfo) => {
   notification.show();
 };
 
+/**
+ * Electron's autoUpdater throws on macOS builds without a valid code signature
+ * ("Could not get code signature for running application"). update-electron-app
+ * calls it from its own ready handler, so the error surfaced as an uncaught
+ * exception dialog and the app failed to start. Probe first and skip updates.
+ */
+function canUseAutoUpdater() {
+  if (process.platform !== "darwin") return true;
+
+  try {
+    autoUpdater.setFeedURL({ url: "https://update.electronjs.org" });
+    return true;
+  } catch (err) {
+    console.warn("Auto-updates disabled:", err);
+    return false;
+  }
+}
+
 if (acquiredLock) {
-  // start auto update logic
-  updateElectronApp({ onNotifyUser });
+  // start auto update logic (feed URL is replaced by update-electron-app)
+  app.whenReady().then(() => {
+    if (canUseAutoUpdater()) {
+      updateElectronApp({ onNotifyUser });
+    }
+  });
 
   // facilitate stoat:// links
   registerProtocol();
