@@ -21,6 +21,7 @@ vi.mock("../../assets/desktop/icon.png?asset", () => ({ default: "" }));
 vi.mock("../../assets/desktop/iconTemplate.png?asset", () => ({
   default: "",
 }));
+vi.mock("./settingsWindow", () => ({ openSettingsWindow: vi.fn() }));
 vi.mock("./window", () => ({
   mainWindow: { isVisible: () => true },
   quitApp: vi.fn(),
