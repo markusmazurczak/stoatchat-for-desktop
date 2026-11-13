@@ -6,7 +6,7 @@ const PAGE = /* html */ `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
 <title>Desktop settings</title>
 <style>
   :root { color-scheme: dark; --bg:#191919; --panel:#232323; --line:#333; --text:#e6e6e6; --muted:#9a9a9a; --accent:#5865f2; --ok:#3ba55d; --err:#ed4245; --warn:#f0b232; }

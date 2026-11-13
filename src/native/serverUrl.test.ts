@@ -25,7 +25,8 @@ describe("normalizeServerUrl", () => {
   it.each([
     ["http://chat.example.com", "Only https://"],
     ["ftp://chat.example.com", "Only https://"],
-    ["javascript:alert(1)", "not a valid address"],
+    ["javascript:alert(1)", "Only https://"],
+    ["https:/chat.example.com", "not a valid address"],
     ["https://user:pw@chat.example.com", "credentials"],
     ["", "enter a server address"],
     ["https://exa mple.com", "not a valid address"],
@@ -33,6 +34,15 @@ describe("normalizeServerUrl", () => {
     const result = normalizeServerUrl(input);
     expect(result.ok).toBe(false);
     expect(result.error).toContain(message);
+  });
+
+  it("uses http for bare localhost and keeps ports", () => {
+    expect(normalizeServerUrl("localhost:5173").url).toBe(
+      "http://localhost:5173/",
+    );
+    expect(normalizeServerUrl("chat.example.com:8443/app").url).toBe(
+      "https://chat.example.com:8443/app",
+    );
   });
 
   it("allows http only for localhost", () => {

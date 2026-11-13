@@ -29,6 +29,11 @@ const ALLOWED_PERMISSIONS = new Set<string>([
   "speaker-selection",
 ]);
 
+/**
+ * Trust is per origin (scheme + host + port), like everywhere on the web:
+ * every page on the configured server's origin is trusted, not only the
+ * app's path. Only use servers that host nothing but the Stoat web app.
+ */
 export function isTrustedUrl(url: string | undefined, appOrigin: string) {
   if (!url) return false;
   try {
