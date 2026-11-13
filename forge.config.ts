@@ -179,6 +179,8 @@ const config: ForgeConfig = {
       [FuseV1Options.EnableNodeCliInspectArguments]: false,
       [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
       [FuseV1Options.OnlyLoadAppFromAsar]: true,
+      // the app is loaded over https; file:// needs no extra privileges
+      [FuseV1Options.GrantFileProtocolExtraPrivileges]: false,
     }),
   ],
   publishers: [

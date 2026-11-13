@@ -1,6 +1,7 @@
 import AutoLaunch from "auto-launch";
 
-import { ipcMain } from "electron";
+import { handleTrusted } from "./security";
+import { getAppOrigin } from "./window";
 
 import { getAutoLaunchPath } from "./squirrel";
 
@@ -12,21 +13,31 @@ export const autoLaunch = new AutoLaunch({
 });
 
 export function initAutoLaunch() {
-  ipcMain.handle("getAutostart", async () => {
-    const enabled = await autoLaunch.isEnabled();
-    return enabled;
-  });
+  handleTrusted(
+    "getAutostart",
+    () => getAppOrigin(),
+    async () => {
+      const enabled = await autoLaunch.isEnabled();
+      return enabled;
+    },
+  );
 
-  ipcMain.handle("setAutostart", async (_event, state: boolean) => {
-    if (state) {
-      await autoLaunch.enable();
-      console.log("Received new configuration autoStart: true");
-    } else {
-      await autoLaunch.disable();
-      console.log("Received new configuration autoStart: false");
-    }
+  handleTrusted(
+    "setAutostart",
+    () => getAppOrigin(),
+    async (_event, state) => {
+      if (typeof state !== "boolean")
+        throw new Error("Invalid autostart state");
+      if (state) {
+        await autoLaunch.enable();
+        console.log("Received new configuration autoStart: true");
+      } else {
+        await autoLaunch.disable();
+        console.log("Received new configuration autoStart: false");
+      }
 
-    const enabled = await autoLaunch.isEnabled();
-    return enabled;
-  });
+      const enabled = await autoLaunch.isEnabled();
+      return enabled;
+    },
+  );
 }

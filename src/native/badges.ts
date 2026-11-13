@@ -1,8 +1,9 @@
 import dbus from "@homebridge/dbus-native";
 
-import { NativeImage, app, ipcMain, nativeImage } from "electron";
+import { NativeImage, app, nativeImage } from "electron";
 
-import { mainWindow } from "./window";
+import { onTrusted } from "./security";
+import { getAppOrigin, mainWindow } from "./window";
 
 // internal state
 const nativeIcons: Record<number, NativeImage> = {};
@@ -66,4 +67,12 @@ export async function setBadgeCount(count: number) {
   }
 }
 
-ipcMain.on("setBadgeCount", (_event, count: number) => setBadgeCount(count));
+onTrusted(
+  "setBadgeCount",
+  () => getAppOrigin(),
+  (_event, count) => {
+    if (typeof count === "number" && Number.isInteger(count) && count >= -1) {
+      setBadgeCount(count);
+    }
+  },
+);
