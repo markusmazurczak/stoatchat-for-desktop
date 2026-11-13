@@ -31,9 +31,8 @@ function disposeClient() {
   if (!client) return;
 
   client.removeAllListeners();
-  client.destroy().catch((err) => {
-    console.warn("Failed to close Discord RPC connection:", err);
-  });
+  // closing a connection that never opened rejects; nothing to clean up then
+  client.destroy().catch(() => undefined);
 }
 
 export async function initDiscordRpc() {
@@ -43,7 +42,13 @@ export async function initDiscordRpc() {
   clearReconnect();
   disposeClient();
 
-  const client = new Client({ transport: "ipc" });
+  let client: Client;
+  try {
+    client = new Client({ transport: "ipc" });
+  } catch (err) {
+    console.warn("Failed to create Discord RPC client:", err);
+    return;
+  }
   rpc = client;
 
   const handleConnectionLoss = () => {
