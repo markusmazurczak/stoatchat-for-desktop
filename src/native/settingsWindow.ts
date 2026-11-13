@@ -58,9 +58,18 @@ export async function testServer(input: unknown): Promise<Result> {
   if (!normalized.ok) return { ok: false, message: normalized.error };
 
   try {
+    // don't follow redirects blindly (e.g. to http or other hosts)
     const response = await net.fetch(normalized.url, {
+      redirect: "manual",
       signal: AbortSignal.timeout(CONNECTION_TEST_TIMEOUT_MS),
     });
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get("location") ?? "another address";
+      return {
+        ok: false,
+        message: `The server redirects to ${location}. Enter that address instead.`,
+      };
+    }
     const type = response.headers.get("content-type") ?? "";
     if (!response.ok) {
       return { ok: false, message: `Server answered with ${response.status}.` };

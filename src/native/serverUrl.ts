@@ -27,9 +27,15 @@ export function normalizeServerUrl(input: string): ServerUrlResult {
     return invalid("The address is too long.");
   }
 
-  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)
+  // explicit scheme ("https:", "http:", "javascript:" …) is kept and checked
+  // below; bare hosts get https, bare localhost gets http for development
+  const hasScheme = /^[a-z][a-z0-9+.-]*:(?!\d)/i.test(trimmed);
+  const isBareLocal = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?(\/|$)/i.test(
+    trimmed,
+  );
+  const withScheme = hasScheme
     ? trimmed
-    : `https://${trimmed}`;
+    : `${isBareLocal ? "http" : "https"}://${trimmed}`;
 
   let url: URL;
   try {
@@ -47,7 +53,9 @@ export function normalizeServerUrl(input: string): ServerUrlResult {
   if (url.username || url.password) {
     return invalid("The address must not contain credentials.");
   }
-  if (!url.hostname) return invalid("The address has no host.");
+  if (!url.hostname || !/^https?:\/\//i.test(withScheme)) {
+    return invalid("This is not a valid address.");
+  }
 
   url.hash = "";
   return { ok: true, url: url.toString(), error: "" };

@@ -162,7 +162,9 @@ export function createMainWindow() {
   // load the entrypoint
   mainWindow
     .loadURL(getServerUrl())
-    .then(() => mainWindow.webContents.reload());
+    .then(() => mainWindow.webContents.reload())
+    // did-fail-load opens the desktop settings with the reason
+    .catch((err) => console.error("Failed to load the app:", err));
 
   // minimise window to tray
   mainWindow.on("close", (event) => {
