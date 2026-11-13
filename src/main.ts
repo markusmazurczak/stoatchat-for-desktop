@@ -58,6 +58,14 @@ const onNotifyUser = (_info: IUpdateInfo) => {
   notification.show();
 };
 
+function isSameOrigin(url: string, base: URL) {
+  try {
+    return new URL(url).origin === base.origin;
+  } catch {
+    return false;
+  }
+}
+
 if (acquiredLock) {
   // start auto update logic
   updateElectronApp({ onNotifyUser });
@@ -151,6 +159,12 @@ if (acquiredLock) {
 
     // handle links externally
     contents.setWindowOpenHandler(({ url }) => {
+      // links to the app itself (e.g. middle-clicked message links) stay in the app
+      if (isSameOrigin(url, BUILD_URL)) {
+        setImmediate(() => mainWindow.loadURL(url));
+        return { action: "deny" };
+      }
+
       if (
         url.startsWith("http:") ||
         url.startsWith("https:") ||
