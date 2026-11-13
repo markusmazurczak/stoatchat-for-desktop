@@ -17,6 +17,7 @@ import { config } from "./config";
 import {
   installPermissionHandlers,
   isTrustedSender,
+  isTrustedUrl,
   onTrusted,
 } from "./security";
 import { updateTrayMenu } from "./tray";
@@ -212,6 +213,16 @@ export function createMainWindow() {
 
   session.defaultSession.setDisplayMediaRequestHandler(
     (request, originalCallback) => {
+      // only the app itself may ask for screen sharing, not embedded frames
+      if (
+        !request.frame ||
+        request.frame.parent !== null ||
+        !isTrustedUrl(request.frame.url, getAppOrigin())
+      ) {
+        originalCallback(null);
+        return;
+      }
+
       const callback = async (streams: Electron.Streams) => {
         try {
           if (streams.video) await startVirtualMic();
