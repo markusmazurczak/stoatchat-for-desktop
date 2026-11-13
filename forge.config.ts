@@ -104,6 +104,14 @@ const config: ForgeConfig = {
     executableName: STRINGS.execName,
     // open stoat:// links (on mac)
     protocols: [{ name: STRINGS.name, schemes: ["stoat"] }],
+    // without usage descriptions macOS silently denies microphone/camera
+    // access and never shows the permission prompt
+    extendInfo: {
+      NSMicrophoneUsageDescription:
+        "Stoat needs access to your microphone for voice chat.",
+      NSCameraUsageDescription:
+        "Stoat needs access to your camera for video calls.",
+    },
     icon:
       process.platform === "darwin"
         ? `${ASSET_DIR}/icon.icon`
