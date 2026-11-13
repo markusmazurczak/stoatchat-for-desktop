@@ -34,8 +34,8 @@ const PAGE = /* html */ `<!doctype html>
 
 <h2>Server</h2>
 <section>
-  <label class="choice"><input type="radio" name="mode" value="official"> Official server (<span id="official"></span>)</label>
-  <label class="choice"><input type="radio" name="mode" value="custom"> Custom server</label>
+  <label class="choice"><input type="radio" name="mode" value="official"><span>Official server (<span id="official"></span>)</span></label>
+  <label class="choice"><input type="radio" name="mode" value="custom"><span>Custom server</span></label>
   <input id="url" type="text" list="recent" placeholder="https://chat.example.com/app" spellcheck="false" autocomplete="off">
   <datalist id="recent"></datalist>
   <div class="hint">Address of the Stoat web app on your server. Only https:// is allowed.</div>
@@ -65,7 +65,7 @@ const PAGE = /* html */ `<!doctype html>
     modeInputs.forEach((i) => { i.checked = i.value === (custom ? "custom" : "official"); i.disabled = state.locked; });
     $("url").value = state.savedServerUrl || "";
     for (const entry of state.recentServers) { const o = document.createElement("option"); o.value = entry; $("recent").append(o); }
-    const notices = [state.reason, state.warning, state.locked ? "The server is set by the --force-server start parameter (" + state.serverUrl + "). Remove it from the shortcut to change the server here." : ""].filter(Boolean);
+    const notices = [...new Set([state.reason, state.warning])].concat([ state.locked ? "The server is set by the --force-server start parameter (" + state.serverUrl + "). Remove it from the shortcut to change the server here." : ""]).filter(Boolean);
     if (notices.length) { $("notice").textContent = notices.join(" "); $("notice").hidden = false; }
     $("save").disabled = state.locked;
     syncInputs();

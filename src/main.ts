@@ -142,7 +142,7 @@ if (acquiredLock) {
 
     // an invalid saved server or --force-server value was ignored
     const serverWarning = getServerWarning();
-    if (serverWarning) openSettingsWindow(serverWarning);
+    if (serverWarning) openSettingsWindow();
     initDiscordRpc();
     initVirtualMic();
     initAutoLaunch();
