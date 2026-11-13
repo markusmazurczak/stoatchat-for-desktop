@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const handlers: Record<string, (event: { returnValue?: unknown }) => void> = {};
 const stored = new Map<string, unknown>();
+let failReads = false;
 
 vi.mock("electron", () => ({
   ipcMain: {
@@ -16,6 +17,7 @@ vi.mock("electron-store", () => ({
       Object.entries(options.defaults).forEach(([k, v]) => stored.set(k, v));
     }
     get(key: string) {
+      if (failReads) throw new Error("corrupt store");
       return stored.get(key);
     }
     set(key: string, value: unknown) {
@@ -37,6 +39,7 @@ describe("main process config", () => {
   beforeEach(async () => {
     vi.resetModules();
     stored.clear();
+    failReads = false;
     await import("./config");
   });
 
@@ -60,5 +63,21 @@ describe("main process config", () => {
     handlers["config:get"](event);
 
     expect(event.returnValue?.customFrame).toBe(false);
+  });
+
+  it("answers with defaults instead of blocking when the store cannot be read", () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    failReads = true;
+    const event: { returnValue?: DesktopConfig } = {};
+
+    handlers["config:get"](event);
+
+    expect(event.returnValue?.windowState).toEqual({
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+      isMaximised: false,
+    });
   });
 });
