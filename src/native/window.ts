@@ -19,6 +19,20 @@ import { buildContextMenuTemplate } from "./contextMenu";
 import { updateTrayMenu } from "./tray";
 import { startVirtualMic } from "./virtualMic";
 
+// answers a still pending screen picker request with "cancelled"
+let cancelPendingScreenPicker: (() => void) | null = null;
+
+const SOURCE_ICON_SIZE = 256;
+
+// resize() returns a new image; keep the data URLs sent to the page small
+function scaleSourceIcon(icon?: Electron.NativeImage) {
+  if (!icon || icon.isEmpty()) return undefined;
+
+  return icon.getAspectRatio() > 1
+    ? icon.resize({ width: SOURCE_ICON_SIZE })
+    : icon.resize({ height: SOURCE_ICON_SIZE });
+}
+
 // global reference to main window
 export let mainWindow: BrowserWindow;
 
@@ -206,34 +220,28 @@ export function createMainWindow() {
                 });
             return;
           }
-          ipcMain.once(
-            "screenPickerCallback",
-            (_, idx: number, audio: boolean) => {
-              if (idx < 0 || idx > sources.length) {
-                callback({});
-              } else {
-                audio
-                  ? callback({
-                      video: sources[idx],
-                      audio: "loopback",
-                    })
-                  : callback({
-                      video: sources[idx],
-                    });
-              }
-            },
-          );
+          // only one picker can be pending; answer the previous request first
+          cancelPendingScreenPicker?.();
+          const onPick = (_: unknown, idx: number, audio: boolean) => {
+            cancelPendingScreenPicker = null;
+            if (!Number.isInteger(idx) || idx < 0 || idx >= sources.length) {
+              callback({});
+            } else if (audio) {
+              callback({ video: sources[idx], audio: "loopback" });
+            } else {
+              callback({ video: sources[idx] });
+            }
+          };
+          ipcMain.once("screenPickerCallback", onPick);
+          cancelPendingScreenPicker = () => {
+            ipcMain.removeListener("screenPickerCallback", onPick);
+            cancelPendingScreenPicker = null;
+            callback({});
+          };
           mainWindow.webContents.send(
             "screenPicker",
             sources.map((source, idx) => {
-              const image = source.appIcon;
-              if (image) {
-                if (image.getAspectRatio() > 1) {
-                  image.resize({ width: 256 });
-                } else {
-                  image.resize({ height: 256 });
-                }
-              }
+              const image = scaleSourceIcon(source.appIcon);
               return {
                 idx: idx,
                 name: source.name,
