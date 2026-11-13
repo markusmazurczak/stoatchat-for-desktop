@@ -50,24 +50,26 @@ const schema = {
   } as JSONSchema.Object,
 };
 
+const defaults: DesktopConfig = {
+  firstLaunch: true,
+  customFrame: true,
+  minimiseToTray: true,
+  startMinimisedToTray: false,
+  spellchecker: true,
+  hardwareAcceleration: true,
+  discordRpc: true,
+  windowState: {
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+    isMaximised: false,
+  },
+};
+
 const store = new Store({
   schema,
-  defaults: {
-    firstLaunch: true,
-    customFrame: true,
-    minimiseToTray: true,
-    startMinimisedToTray: false,
-    spellchecker: true,
-    hardwareAcceleration: true,
-    discordRpc: true,
-    windowState: {
-      x: 0,
-      y: 0,
-      width: 0,
-      height: 0,
-      isMaximised: false,
-    },
-  } as DesktopConfig,
+  defaults,
 });
 
 /**
@@ -219,7 +221,13 @@ export const config = new Config();
 // Waiting for `did-finish-load` is too late: the web app may already render the
 // custom titlebar, which reads `desktopConfig.get().windowState` (blank window).
 ipcMain.on("config:get", (event) => {
-  event.returnValue = config.snapshot();
+  // A sync IPC without returnValue would block the renderer, so always answer.
+  try {
+    event.returnValue = config.snapshot();
+  } catch (error) {
+    console.error("Failed to read configuration, using defaults:", error);
+    event.returnValue = defaults;
+  }
 });
 
 ipcMain.on("config", (_, newConfig: Partial<DesktopConfig>) => {
