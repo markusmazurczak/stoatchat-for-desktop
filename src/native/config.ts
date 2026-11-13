@@ -1,10 +1,10 @@
 import { type JSONSchema } from "json-schema-typed";
 
-import { ipcMain } from "electron";
 import Store from "electron-store";
 
 import { destroyDiscordRpc, initDiscordRpc } from "./discordRpc";
-import { mainWindow } from "./window";
+import { onTrusted, sanitizeConfigUpdate } from "./security";
+import { getAppOrigin, mainWindow } from "./window";
 
 const schema = {
   firstLaunch: {
@@ -211,9 +211,14 @@ class Config {
 
 export const config = new Config();
 
-ipcMain.on("config", (_, newConfig: Partial<DesktopConfig>) => {
-  console.info("Received new configuration", newConfig);
-  Object.entries(newConfig).forEach(
-    ([key, value]) => (config[key as keyof DesktopConfig] = value as never),
-  );
-});
+onTrusted(
+  "config",
+  () => getAppOrigin(),
+  (_, input) => {
+    const newConfig = sanitizeConfigUpdate(input);
+    console.info("Received new configuration", newConfig);
+    Object.entries(newConfig).forEach(
+      ([key, value]) => (config[key as keyof DesktopConfig] = value as never),
+    );
+  },
+);

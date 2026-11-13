@@ -143,6 +143,9 @@ if (acquiredLock) {
   // ensure URLs launch in external context
   app.on("web-contents-created", (_, contents) => {
     // prevent navigation out of build URL origin
+    // the app never embeds <webview>; block them outright
+    contents.on("will-attach-webview", (event) => event.preventDefault());
+
     contents.on("will-navigate", (event, navigationUrl) => {
       if (new URL(navigationUrl).origin !== BUILD_URL.origin) {
         event.preventDefault();

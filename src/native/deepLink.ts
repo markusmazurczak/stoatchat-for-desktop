@@ -1,8 +1,9 @@
 import path from "node:path";
 
-import { app, ipcMain } from "electron";
+import { app } from "electron";
 
-import { createMainWindow, mainWindow } from "./window";
+import { handleTrusted, onTrusted } from "./security";
+import { createMainWindow, getAppOrigin, mainWindow } from "./window";
 
 /**
  * Link scheme (stoat://)
@@ -76,10 +77,18 @@ export function openDeepLink(link: string) {
  * it twice only opens the same page.
  */
 export function initDeepLinks() {
-  ipcMain.handle("takeNavigation", () => pending ?? null);
-  ipcMain.on("navigationDone", (_, id: number) => {
-    if (pending?.id === id) pending = undefined;
-  });
+  handleTrusted(
+    "takeNavigation",
+    () => getAppOrigin(),
+    () => pending ?? null,
+  );
+  onTrusted(
+    "navigationDone",
+    () => getAppOrigin(),
+    (_, id) => {
+      if (pending?.id === id) pending = undefined;
+    },
+  );
 }
 
 /**

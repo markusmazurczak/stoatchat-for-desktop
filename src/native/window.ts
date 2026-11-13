@@ -14,6 +14,11 @@ import {
 import windowIconAsset from "../../assets/desktop/icon.png?asset";
 
 import { config } from "./config";
+import {
+  installPermissionHandlers,
+  isTrustedSender,
+  onTrusted,
+} from "./security";
 import { updateTrayMenu } from "./tray";
 import { startVirtualMic } from "./virtualMic";
 
@@ -26,6 +31,11 @@ export const BUILD_URL = new URL(
     ? app.commandLine.getSwitchValue("force-server")
     : /*MAIN_WINDOW_VITE_DEV_SERVER_URL ??*/ "https://stoat.chat/app",
 );
+
+/** Origin of the loaded app; the only origin trusted with IPC and permissions */
+export function getAppOrigin() {
+  return BUILD_URL.origin;
+}
 
 // internal window state
 let shouldQuit = false;
@@ -61,6 +71,7 @@ export function createMainWindow() {
       preload: join(__dirname, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
+      sandbox: true,
       spellcheck: true,
     },
   });
@@ -196,6 +207,9 @@ export function createMainWindow() {
   });
 
   // Create display media request handler
+  // only the app origin gets permissions (Electron grants all by default)
+  installPermissionHandlers(session.defaultSession, () => getAppOrigin());
+
   session.defaultSession.setDisplayMediaRequestHandler(
     (request, originalCallback) => {
       const callback = async (streams: Electron.Streams) => {
@@ -224,7 +238,11 @@ export function createMainWindow() {
           }
           ipcMain.once(
             "screenPickerCallback",
-            (_, idx: number, audio: boolean) => {
+            (event, idx: number, audio: boolean) => {
+              if (!isTrustedSender(event, getAppOrigin())) {
+                callback({});
+                return;
+              }
               if (idx < 0 || idx > sources.length) {
                 callback({});
               } else {
@@ -274,11 +292,24 @@ export function createMainWindow() {
 //
 // The window can in theory be recreated, and this is done in practice on macOS,
 // so this is registered app-wide
-ipcMain.on("minimise", () => mainWindow?.minimize());
-ipcMain.on("maximise", () =>
-  mainWindow?.isMaximized() ? mainWindow.unmaximize() : mainWindow?.maximize(),
+onTrusted(
+  "minimise",
+  () => getAppOrigin(),
+  () => mainWindow?.minimize(),
 );
-ipcMain.on("close", () => mainWindow?.close());
+onTrusted(
+  "maximise",
+  () => getAppOrigin(),
+  () =>
+    mainWindow?.isMaximized()
+      ? mainWindow.unmaximize()
+      : mainWindow?.maximize(),
+);
+onTrusted(
+  "close",
+  () => getAppOrigin(),
+  () => mainWindow?.close(),
+);
 
 /**
  * Quit the entire app

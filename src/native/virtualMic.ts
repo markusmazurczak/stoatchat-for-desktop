@@ -1,8 +1,11 @@
 import { PipewireNode } from "node-pipewire";
 
-import { app, ipcMain } from "electron";
+import { app } from "electron";
 
 import { sinkName, sourceName } from "../constants";
+
+import { handleTrusted } from "./security";
+import { getAppOrigin } from "./window";
 
 // How many ms to wait for pipewire to settle. 100 should be safe.
 const PW_SETTLE_MS = 100;
@@ -17,7 +20,11 @@ export const isWayland =
   process.platform === "linux" &&
   (process.env.XDG_SESSION_TYPE === "wayland" || !!process.env.WAYLAND_DISPLAY);
 
-ipcMain.handle("getIsWayland", () => isWayland);
+handleTrusted(
+  "getIsWayland",
+  () => getAppOrigin(),
+  () => isWayland,
+);
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 let setupVirtualMic = async () => {};
@@ -33,7 +40,11 @@ export async function destroyVirtualMic() {
   return teardownVirtualMic();
 }
 
-ipcMain.handle("destroyVirtualMic", () => destroyVirtualMic());
+handleTrusted(
+  "destroyVirtualMic",
+  () => getAppOrigin(),
+  () => destroyVirtualMic(),
+);
 
 export async function initVirtualMic() {
   // Only available on Wayland
