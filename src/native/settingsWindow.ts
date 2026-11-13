@@ -100,9 +100,18 @@ async function confirmCustomServer(url: string) {
  * Persist the chosen server and load it, unless --force-server overrides it.
  */
 export async function saveServer(input: unknown): Promise<Result> {
-  const { mode, url } = (input ?? {}) as { mode?: unknown; url?: unknown };
+  const { mode, url, voiceJoinOnDoubleClick } = (input ?? {}) as {
+    mode?: unknown;
+    url?: unknown;
+    voiceJoinOnDoubleClick?: unknown;
+  };
+
+  // behaviour options apply regardless of how the server is set
+  if (typeof voiceJoinOnDoubleClick === "boolean") {
+    config.voiceJoinOnDoubleClick = voiceJoinOnDoubleClick;
+  }
   if (getServerSource() === "command-line") {
-    return { ok: false, message: "The server is set by --force-server." };
+    return { ok: true, message: "Saved." };
   }
 
   let target = DEFAULT_SERVER_URL;
@@ -134,6 +143,7 @@ function getState() {
     recentServers: config.recentServers,
     defaultServerUrl: DEFAULT_SERVER_URL,
     locked: getServerSource() === "command-line",
+    voiceJoinOnDoubleClick: config.voiceJoinOnDoubleClick,
     warning: getServerWarning(),
     reason: openReason,
   };
@@ -164,7 +174,7 @@ export function openSettingsWindow(reason?: string) {
   settingsWindow = new BrowserWindow({
     parent,
     width: 560,
-    height: 520,
+    height: 610,
     resizable: false,
     minimizable: false,
     maximizable: false,

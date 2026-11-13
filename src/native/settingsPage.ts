@@ -43,6 +43,12 @@ const PAGE = /* html */ `<!doctype html>
   <div id="status" class="status" role="status"></div>
 </section>
 
+<h2>Behaviour</h2>
+<section>
+  <label class="choice"><input id="voiceDblClick" type="checkbox"><span>Join voice channels with a double click</span></label>
+  <div class="hint">A single click still only opens the channel.</div>
+</section>
+
 <div class="footer">
   <button id="cancel">Cancel</button>
   <button id="save" class="primary">Save</button>
@@ -67,7 +73,7 @@ const PAGE = /* html */ `<!doctype html>
     for (const entry of state.recentServers) { const o = document.createElement("option"); o.value = entry; $("recent").append(o); }
     const notices = [...new Set([state.reason, state.warning])].concat([ state.locked ? "The server is set by the --force-server start parameter (" + state.serverUrl + "). Remove it from the shortcut to change the server here." : ""]).filter(Boolean);
     if (notices.length) { $("notice").textContent = notices.join(" "); $("notice").hidden = false; }
-    $("save").disabled = state.locked;
+    $("voiceDblClick").checked = !!state.voiceJoinOnDoubleClick;
     syncInputs();
   }
 
@@ -82,7 +88,7 @@ const PAGE = /* html */ `<!doctype html>
   });
   $("save").addEventListener("click", async () => {
     $("save").disabled = true;
-    const r = await api.save({ mode: mode(), url: $("url").value });
+    const r = await api.save({ mode: mode(), url: $("url").value, voiceJoinOnDoubleClick: $("voiceDblClick").checked });
     $("save").disabled = false;
     if (r.ok) api.close(); else setStatus(r.message, r.cancelled ? "" : "err");
   });

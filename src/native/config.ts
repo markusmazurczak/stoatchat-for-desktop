@@ -29,6 +29,9 @@ const schema = {
   discordRpc: {
     type: "boolean",
   } as JSONSchema.Boolean,
+  voiceJoinOnDoubleClick: {
+    type: "boolean",
+  } as JSONSchema.Boolean,
   serverUrl: {
     type: "string",
   } as JSONSchema.String,
@@ -75,6 +78,7 @@ const defaults: DesktopConfig & LocalConfig = {
   spellchecker: true,
   hardwareAcceleration: true,
   discordRpc: true,
+  voiceJoinOnDoubleClick: false,
   windowState: {
     x: 0,
     y: 0,
@@ -102,6 +106,7 @@ class Config {
       spellchecker: this.spellchecker,
       hardwareAcceleration: this.hardwareAcceleration,
       discordRpc: this.discordRpc,
+      voiceJoinOnDoubleClick: this.voiceJoinOnDoubleClick,
       windowState: this.windowState,
     };
   }
@@ -217,6 +222,21 @@ class Config {
         destroyDiscordRpc();
       }
     }
+
+    this.sync();
+  }
+
+  get voiceJoinOnDoubleClick() {
+    return (store as never as { get(k: string): boolean }).get(
+      "voiceJoinOnDoubleClick",
+    );
+  }
+
+  set voiceJoinOnDoubleClick(value: boolean) {
+    (store as never as { set(k: string, value: boolean): void }).set(
+      "voiceJoinOnDoubleClick",
+      value,
+    );
 
     this.sync();
   }

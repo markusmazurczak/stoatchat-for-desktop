@@ -6,6 +6,8 @@ declare type DesktopConfig = {
   spellchecker: boolean;
   hardwareAcceleration: boolean;
   discordRpc: boolean;
+  /** fork-only: join voice channels on double click */
+  voiceJoinOnDoubleClick: boolean;
   windowState: {
     x: number;
     y: number;
