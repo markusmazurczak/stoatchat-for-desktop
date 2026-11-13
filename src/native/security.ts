@@ -2,13 +2,18 @@ import type {
   IpcMainEvent,
   IpcMainInvokeEvent,
   PermissionCheckHandlerHandlerDetails,
-  PermissionRequestHandlerHandlerDetails,
   Session,
   WebContents,
 } from "electron";
 import { ipcMain } from "electron";
 
 type AnyIpcEvent = IpcMainEvent | IpcMainInvokeEvent;
+
+/** Fields of Electron's permission request details that are used here */
+type PermissionRequestDetails = {
+  requestingUrl?: string;
+  externalURL?: string;
+};
 
 /**
  * Permissions the app needs (voice/video, screen share, notifications,
@@ -22,7 +27,6 @@ const ALLOWED_PERMISSIONS = new Set<string>([
   "clipboard-read",
   "clipboard-sanitized-write",
   "speaker-selection",
-  "pointerLock",
 ]);
 
 export function isTrustedUrl(url: string | undefined, appOrigin: string) {
@@ -88,7 +92,7 @@ export function isPermissionAllowed(
   permission: string,
   requestingUrl: string | undefined,
   appOrigin: string,
-  details?: Partial<PermissionRequestHandlerHandlerDetails>,
+  details?: PermissionRequestDetails,
 ) {
   // embedded media (e.g. video embeds in messages) may go fullscreen
   if (permission === "fullscreen") return true;
@@ -117,7 +121,7 @@ export function installPermissionHandlers(
       _contents: WebContents,
       permission,
       callback,
-      details: PermissionRequestHandlerHandlerDetails,
+      details: PermissionRequestDetails,
     ) => {
       callback(
         isPermissionAllowed(
