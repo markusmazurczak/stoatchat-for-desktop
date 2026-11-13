@@ -13,6 +13,9 @@
     "lint:fix": "eslint --ext --fix .ts,.tsx .",
     "fmt": "prettier --check 'src/**/*.{ts,tsx,json}'",
     "fmt:fix": "prettier --write 'src/**/*.{ts,tsx,json}'",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "install:flatpak": "flatpak --user install out/make/flatpak/x86_64/chat.stoat.StoatDesktop_stable_x86_64.flatpak",
     "run:flatpak": "flatpak run chat.stoat.StoatDesktop",
     "run:nix": "/usr/bin/env electron-nix ."
@@ -41,15 +44,18 @@
     "@types/node-pipewire": "^1.1.0",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
+    "@vitest/coverage-v8": "^3.2.7",
     "electron": "44.6.0",
     "electron-windows-store": "^2.1.0",
     "eslint": "^8.57.1",
     "eslint-plugin-import": "^2.32.0",
+    "jsdom": "^26.1.0",
     "json-schema-typed": "^8.0.1",
     "lodash": "^4.17.21",
     "prettier": "^3.6.2",
     "typescript": "~4.5.4",
-    "vite": "^5.4.20"
+    "vite": "^5.4.20",
+    "vitest": "^3.2.7"
   },
   "dependencies": {
     "@homebridge/dbus-native": "^0.7.2",
