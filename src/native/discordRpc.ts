@@ -32,7 +32,7 @@ function disposeClient() {
 
   client.removeAllListeners();
   // closing a connection that never opened rejects; nothing to clean up then
-  client.destroy().catch(() => undefined);
+  client.destroy().catch((): void => undefined);
 }
 
 export async function initDiscordRpc() {
