@@ -3,9 +3,8 @@ import path from "node:path";
 import { IUpdateInfo, updateElectronApp } from "update-electron-app";
 
 import { BrowserWindow, Notification, app, shell } from "electron";
-import started from "electron-squirrel-startup";
 
-import { initAutoLaunch } from "./native/autoLaunch";
+import { autoLaunch, initAutoLaunch } from "./native/autoLaunch";
 import { config } from "./native/config";
 import {
   findDeepLink,
@@ -14,6 +13,10 @@ import {
   registerProtocol,
 } from "./native/deepLink";
 import { initDiscordRpc } from "./native/discordRpc";
+import {
+  WINDOWS_APP_USER_MODEL_ID,
+  handleSquirrelEvent,
+} from "./native/squirrel";
 import { initTray } from "./native/tray";
 import { destroyVirtualMic, initVirtualMic } from "./native/virtualMic";
 import { BUILD_URL, createMainWindow, mainWindow } from "./native/window";
@@ -33,11 +36,13 @@ if (process.platform === "linux" && process.env.FLATPAK_ID) {
   }
 }
 
-// Squirrel-specific logic
-// create/remove shortcuts on Windows when installing / uninstalling
-// we just need to close out of the app immediately
-if (started) {
-  app.quit();
+// Squirrel-specific logic: create/remove shortcuts on Windows when
+// installing / uninstalling; the handler quits the app once it is done
+const startedBySquirrel = handleSquirrelEvent(() => autoLaunch.disable());
+
+// must match the Squirrel shortcuts and be set before any window is created
+if (process.platform === "win32") {
+  app.setAppUserModelId(WINDOWS_APP_USER_MODEL_ID);
 }
 
 // disable hw-accel if so requested
@@ -46,7 +51,7 @@ if (!config.hardwareAcceleration) {
 }
 
 // ensure only one copy of the application can run
-const acquiredLock = app.requestSingleInstanceLock();
+const acquiredLock = !startedBySquirrel && app.requestSingleInstanceLock();
 
 const onNotifyUser = (_info: IUpdateInfo) => {
   const notification = new Notification({
@@ -100,11 +105,6 @@ if (acquiredLock) {
     if (pendingDeepLink) {
       openDeepLink(pendingDeepLink);
       pendingDeepLink = undefined;
-    }
-
-    // Windows specific fix for notifications
-    if (process.platform === "win32") {
-      app.setAppUserModelId("chat.stoat.notifications");
     }
   });
 
@@ -174,6 +174,6 @@ if (acquiredLock) {
       app.quit();
     });
   });
-} else {
+} else if (!startedBySquirrel) {
   app.quit();
 }

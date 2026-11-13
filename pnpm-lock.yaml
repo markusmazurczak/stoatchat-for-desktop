@@ -23,9 +23,6 @@ importers:
       discord-rpc:
         specifier: ^4.0.1
         version: 4.0.1(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@6.0.5)
-      electron-squirrel-startup:
-        specifier: ^1.0.1
-        version: 1.0.1(supports-color@8.1.1)
       electron-store:
         specifier: ^10.1.0
         version: 10.1.0
@@ -78,9 +75,6 @@ importers:
       '@types/discord-rpc':
         specifier: ^4.0.9
         version: 4.0.9
-      '@types/electron-squirrel-startup':
-        specifier: ^1.0.2
-        version: 1.0.2
       '@types/node-pipewire':
         specifier: ^1.1.0
         version: 1.1.0
@@ -838,9 +832,6 @@ packages:
   '@types/discord-rpc@4.0.9':
     resolution: {integrity: sha512-IW5yPfEzcZRaHTvB/AZOvadMwQihVzxbl6xueuGUr3RBF8VSkzbucCRC/zzS10CEVka7LRGT4C7lXKMbWv8oWQ==}
 
-  '@types/electron-squirrel-startup@1.0.2':
-    resolution: {integrity: sha512-AzxnvBzNh8K/0SmxMmZtpJf1/IWoGXLP+pQDuUaVkPyotI8ryvAtBSqgxR/qOSvxWHYWrxkeNsJ+Ca5xOuUxJQ==}
-
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
 
@@ -1508,9 +1499,6 @@ packages:
     engines: {node: '>= 10.0.0'}
     os: [darwin, linux]
     hasBin: true
-
-  electron-squirrel-startup@1.0.1:
-    resolution: {integrity: sha512-sTfFIHGku+7PsHLJ7v0dRcZNkALrV+YEozINTW8X1nM//e5O3L+rfYuvSW00lmGHnYmUjARZulD8F2V8ISI9RA==}
 
   electron-store@10.1.0:
     resolution: {integrity: sha512-oL8bRy7pVCLpwhmXy05Rh/L6O93+k9t6dqSw0+MckIc3OmCTZm6Mp04Q4f/J0rtu84Ky6ywkR8ivtGOmrq+16w==}
@@ -4483,8 +4471,6 @@ snapshots:
     dependencies:
       '@types/events': 3.0.3
 
-  '@types/electron-squirrel-startup@1.0.2': {}
-
   '@types/estree@1.0.8': {}
 
   '@types/events@3.0.3': {}
@@ -5253,12 +5239,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
     optional: true
-
-  electron-squirrel-startup@1.0.1(supports-color@8.1.1):
-    dependencies:
-      debug: 2.6.9(supports-color@8.1.1)
-    transitivePeerDependencies:
-      - supports-color
 
   electron-store@10.1.0:
     dependencies:
