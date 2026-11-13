@@ -1,0 +1,115 @@
+# Fork-only workflow: builds test packages from fork/integration.
+# Not part of any upstream PR. Auto-updater is compiled out (STOAT_FORK_BUILD=1).
+name: Fork Test Build
+
+on:
+  push:
+    branches: [fork/integration]
+  workflow_dispatch:
+    inputs:
+      mac_intel:
+        description: "Also build macOS x64 (Intel)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fork-test-build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  STOAT_FORK_BUILD: "1"
+
+jobs:
+  check:
+    name: Lint, format, test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          run_install: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm fmt
+      - run: pnpm test:coverage
+
+  matrix:
+    name: Build matrix
+    runs-on: ubuntu-latest
+    outputs:
+      include: ${{ steps.m.outputs.include }}
+    steps:
+      - id: m
+        env:
+          MAC_INTEL: ${{ inputs.mac_intel }}
+        run: |
+          inc='[{"os":"windows-latest","target":"win32-x64"},{"os":"macos-latest","target":"darwin-arm64"}'
+          if [ "$MAC_INTEL" = "true" ]; then inc="$inc"',{"os":"macos-26-intel","target":"darwin-x64"}'; fi
+          echo "include=$inc]" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Package ${{ matrix.target }}
+    needs: [check, matrix]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.matrix.outputs.include) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Checkout assets
+        run: git -c submodule."assets".update=checkout submodule update --init assets
+
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          run_install: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Set fork version
+        shell: bash
+        run: |
+          base=$(node -p "require('./package.json').version")
+          IFS=. read -r ma mi pa <<< "$base"
+          ver="$ma.$mi.$((pa + 1))-fork${GITHUB_RUN_NUMBER}"
+          npm pkg set version="$ver"
+          echo "FORK_VERSION=$ver" >> "$GITHUB_ENV"
+
+      - name: Make (Windows)
+        if: runner.os == 'Windows'
+        run: pnpm run make
+
+      - name: Package, ad-hoc sign, make (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          pnpm run package
+          app=$(ls -d out/Stoat-darwin-*/Stoat.app)
+          codesign --force --deep --sign - "$app"
+          codesign --verify --deep --strict --verbose=2 "$app"
+          pnpm run make --skip-package
+
+      - name: List outputs
+        shell: bash
+        run: find out/make -type f | sort
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: stoat-${{ env.FORK_VERSION }}-${{ matrix.target }}
+          path: out/make/**
+          if-no-files-found: error
+          retention-days: 30

@@ -5,6 +5,9 @@ import { defineConfig } from "vitest/config";
 // Fork-only test infrastructure (not proposed upstream).
 // Electron APIs are mocked per test via `vi.mock("electron", ...)`.
 export default defineConfig({
+  define: {
+    __STOAT_FORK_BUILD__: "false",
+  },
   test: {
     include: ["src/**/*.test.ts"],
     environment: "node",
